@@ -13,33 +13,6 @@
  * @constructor
  * @export
  */
- function simulateJump() {
- var keyEvent = document.createEvent('KeyboardEvent');
- Object.defineProperty(keyEvent, 'keyCode', {
-  get : function() {
-   return this.keyCodeVal;
-  }
- });
- keyEvent.initKeyboardEvent('keydown', true, false, null, 0, false, 0, false, 38, 0);
- keyEvent.keyCodeVal = 38;
- document.dispatchEvent(keyEvent);
-}
-function calculate(w1, w2, x){
-	let result = w1*x + w2;
-	return result;
-}
-function updateParam(learningRate, x, label){
-	let w1 = parseFloat(cookie('w1')) + learningRate * label * x;
-	let w2 = parseFloat(cookie('w2')) + learningRate * label * x;
-	cookie.set('w1', w1);
-	cookie.set('w2', w2);
-}
-function updateParam2(learningRate, x, predict , label){
-	let w1 = parseFloat(cookie('w1')) + learningRate * (label-predict) * x;
-	let w2 = parseFloat(cookie('w2')) + learningRate * (label-predict);
-	cookie.set('w1', w1);
-	cookie.set('w2', w2);
-}
 function Runner(outerContainerId, opt_config) {
   // Singleton
   if (Runner.instance_) {
@@ -114,9 +87,6 @@ cookie.set('obs_size', 20);
 cookie.set('passed', 0);
 cookie.set('score', 0);
 cookie.set('crashed', false);
-cookie.set('w1', 0.1);
-cookie.set('w2', -0.1);
-cookie.set('opt', 1);
 
 
 /**
@@ -537,6 +507,7 @@ Runner.prototype = {
     cookie.set('speed', this.currentSpeed);
 
     this.drawPending = false;
+
     var now = getTimeStamp();
     var deltaTime = now - (this.time || now);
     this.time = now;
@@ -590,40 +561,6 @@ Runner.prototype = {
       this.tRex.update(deltaTime);
       this.raq();
     }
-	//console.log(cookie.all())
-	let x = parseInt(cookie('obs_dist'))/1000
-	let w1 = parseFloat(cookie('w1'))
-	let w2 = parseFloat(cookie('w2'))
-	let label = 0;
-	//let opt = parseFloat(cookie('opt'))
-	let opt = x
-	let predict = calculate(w1, w2, x);
-	let opp = 0 
-	opp = this.tRex.jumping ? opp : predict
-	if(predict>1){
-		if(!this.tRex.jumping&&x>0){
-			opt = x;
-			cookie.set('opt', opt);
-			//label = 1;
-			label = 0
-			simulateJump();
-			console.log("JUMPING");
-		}
-	}else{
-		//label = -1;
-		label = 1.5;
-	}
-	let t = this.tRex.jumping ? opt : x
-	//console.log(this.tRex.jumping)
-	if(cookie('crashed')=='true'){
-		console.log(t);
-		console.log('w1: ',w1,'  w2: ', w2,'  opt: ', opt, 'label: ', label, 'opp', opp);
-		console.log(predict)
-		console.log("---------------------------------------")
-		//updateParam(0.01, x, label)
-		updateParam2(0.1, x+0.3, predict, label)
-	}
-	
   },
 
   /**
@@ -1960,14 +1897,14 @@ DistanceMeter.prototype = {
    * @param {number} value Digit value 0-9.
    * @param {boolean} opt_highScore Whether drawing the high score.
    */
-  draw: function(digitPos, value, line, opt_highScore) {
+  draw: function(digitPos, value, opt_highScore) {
     var sourceWidth = DistanceMeter.dimensions.WIDTH;
     var sourceHeight = DistanceMeter.dimensions.HEIGHT;
     var sourceX = DistanceMeter.dimensions.WIDTH * value;
     var sourceY = 0;
 
     var targetX = digitPos * DistanceMeter.dimensions.DEST_WIDTH;
-    var targetY = this.y + 15 * line;
+    var targetY = this.y;
     var targetWidth = DistanceMeter.dimensions.WIDTH;
     var targetHeight = DistanceMeter.dimensions.HEIGHT;
 
@@ -2060,42 +1997,15 @@ DistanceMeter.prototype = {
 
     } else {
       this.digits  = this.defaultString.split('');
-      this.digits2 = this.defaultString.split('');
-      this.digits3 = this.defaultString.split('');
-      this.digits4 = this.defaultString.split('');
-      this.digits5 = this.defaultString.split('');
     }
 
 
     // Draw the digits of the total ran distance.
     if (paint) {
       for (var i = this.digits.length - 1; i >= 0; i--) {
-        this.draw(i, parseInt(this.digits[i]), 0);
+        this.draw(i, parseInt(this.digits[i]));
       }
     }
-    // Draw the digits of speed.
-    for (var i = this.digits2.length - 1; i >= 0; i--) {
-        this.draw(5 + i - this.digits2.length, parseInt(this.digits2[i]), 2);
-      }
-    // Draw the digits of dist.
-	let varDistance = 0;
-    for (var i = this.digits3.length - 1; i >= 0; i--) {
-        this.draw(5 + i - this.digits3.length, parseInt(this.digits3[i]), 3);
-		//console.log("&&&&&",varDistance,i,this.digits3[i]);
-		varDistance = varDistance+Math.pow(10,this.digits3.length - i-1)*parseInt(this.digits3[i])
-      }
-	//if(varDistance < 100)
-		//simulateJump()
-	  //console.log("#####",this.digits3)
-	  //console.log(varDistance);
-    // Draw the digits of size.
-    for (var i = this.digits4.length - 1; i >= 0; i--) {
-        this.draw(5 + i - this.digits4.length, parseInt(this.digits4[i]), 4);
-      }
-    // Draw the digits of passed obstacles count.
-    for (var i = this.digits4.length - 1; i >= 0; i--) {
-        this.draw(5 + i - this.digits5.length, parseInt(this.digits5[i]), 5);
-      }
 
     this.drawHighScore();
 
@@ -2109,7 +2019,7 @@ DistanceMeter.prototype = {
     this.canvasCtx.save();
     this.canvasCtx.globalAlpha = .8;
     for (var i = this.highScore.length - 1; i >= 0; i--) {
-      this.draw(i, parseInt(this.highScore[i], 10), 0, true);
+      this.draw(i, parseInt(this.highScore[i], 10), true);
     }
     this.canvasCtx.restore();
   },

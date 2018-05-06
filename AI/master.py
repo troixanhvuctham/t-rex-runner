@@ -9,7 +9,7 @@ from selenium.webdriver.common.keys import Keys
 driver = webdriver.Chrome()
 
 # l = 'http://rawgit.com/17maxd/t-rex-runner/master/index.html'
-url = 'http://localhost/t-rex-runner/'
+url = 'D:\\Git\\t-rex-runner\\index.html'
 
 def jump():
     pg.press('space')
